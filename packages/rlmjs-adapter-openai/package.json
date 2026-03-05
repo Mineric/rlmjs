@@ -1,0 +1,27 @@
+{
+  "name": "@software-machines/rlmjs-adapter-openai",
+  "version": "0.0.1",
+  "private": true,
+  "description": "OpenAI-compatible provider adapter for rlmjs.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "@software-machines/rlmjs-core": ">=0.0.1"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build && node --test \"dist/**/*.test.js\"",
+    "clean": "rm -rf dist"
+  }
+}

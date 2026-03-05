@@ -1,0 +1,30 @@
+{
+  "name": "@software-machines/rlmjs-node",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Node runtime adapters for rlmjs.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "better-sqlite3": "^11.8.1"
+  },
+  "peerDependencies": {
+    "@software-machines/rlmjs-core": ">=0.0.1"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm --prefix ../rlmjs-core run build && npm run build && node --test \"dist/**/*.test.js\"",
+    "clean": "rm -rf dist"
+  }
+}
