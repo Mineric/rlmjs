@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@software-machines/rlmjs-core": ["../rlmjs-core/dist/index.d.ts"]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

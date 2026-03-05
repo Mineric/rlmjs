@@ -1,0 +1,16 @@
+{
+  "name": "@software-machines/rlmjs-monorepo",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": [
+    "rlmjs-core",
+    "rlmjs-tools",
+    "rlmjs-node",
+    "rlmjs-browser",
+    "rlmjs-adapter-openai",
+    "rlmjs-adapter-llama-cpp"
+  ],
+  "scripts": {
+    "validate": "./scripts/validate-all.sh"
+  }
+}

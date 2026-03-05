@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rlmjs Browser Static Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <h1>rlmjs Browser Static Demo</h1>
+      <p class="muted">Static-only demo with IndexedDB context + worker tool runtime.</p>
+
+      <section class="panel">
+        <h2>Provider</h2>
+        <label>
+          Base URL
+          <input id="baseUrl" type="text" value="http://127.0.0.1:8080/v1" />
+        </label>
+        <label>
+          Model
+          <input id="model" type="text" value="L3-8B-Stheno-v3.2-Q4_K_M.gguf" />
+        </label>
+        <label>
+          API Key (optional)
+          <input id="apiKey" type="password" placeholder="for hosted providers" />
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Context</h2>
+        <label>
+          Conversation Text
+          <textarea id="contextText" rows="10"></textarea>
+        </label>
+        <div class="row">
+          <button id="loadContextBtn" type="button">Load Context Into IndexedDB</button>
+          <span id="loadStatus" class="muted"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Query</h2>
+        <label>
+          Question
+          <input id="query" type="text" value="What did Alice say about the launch date?" />
+        </label>
+        <button id="runBtn" type="button">Run RLM</button>
+      </section>
+
+      <section class="panel">
+        <h2>Output</h2>
+        <pre id="output"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
