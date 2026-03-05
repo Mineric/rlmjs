@@ -20,7 +20,7 @@ From repo root:
 From repo root:
 
 ```bash
-python3 -m http.server 5173 -d experiments/rlmjs-browser-static-demo
+python3 -m http.server 5173 -d examples/browser-static-demo
 ```
 
 Open:
