@@ -55,6 +55,28 @@ const out = await engine.run({ query: "Find launch date" });
 console.log(out.answer, out.citations, out.stats);
 ```
 
+## Reliability Options (minimal)
+
+```ts
+const engine = new RlmEngine({
+  provider,
+  tools,
+  policy: {
+    requireToolCallBeforeFinal: true,
+    maxPrematureFinals: 2
+  }
+});
+```
+
+```ts
+const llamaProvider = new LlamaCppProvider({
+  baseUrl: "http://127.0.0.1:8080/v1",
+  model: "your-model",
+  maxRetries: 3,
+  retryDelayMs: 250
+});
+```
+
 ## Browser Static Usage (IndexedDB + OpenAI-compatible provider)
 
 ```ts
