@@ -4,6 +4,7 @@ import {
   type RlmMessage,
   type RlmProvider,
   type RlmRunLimits,
+  type RlmSubcontext,
   type RlmToolCall,
   type RlmToolResult,
   type RlmToolRuntime,
@@ -34,6 +35,7 @@ type RunInternalInput = {
   query: string;
   systemPrompt?: string;
   depth: number;
+  subcontext?: RlmSubcontext;
 };
 
 type RunContext = {
@@ -43,6 +45,66 @@ type RunContext = {
   totalIterations: number;
   maxDepthReached: number;
 };
+
+function normalizeSubcontext(value: unknown): RlmSubcontext | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const candidate = value as { sliceIds?: unknown };
+  if (!Array.isArray(candidate.sliceIds)) {
+    return undefined;
+  }
+
+  const seen = new Set<string>();
+  const sliceIds = candidate.sliceIds
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => {
+      if (!item || seen.has(item)) {
+        return false;
+      }
+      seen.add(item);
+      return true;
+    });
+
+  return {
+    mode: "restricted",
+    sliceIds
+  };
+}
+
+function mergeSubcontexts(
+  parent: RlmSubcontext | undefined,
+  child: RlmSubcontext | undefined
+): RlmSubcontext | undefined {
+  if (!parent) {
+    return child;
+  }
+  if (!child) {
+    return parent;
+  }
+
+  const allowed = new Set(parent.sliceIds);
+  return {
+    mode: "restricted",
+    sliceIds: child.sliceIds.filter((sliceId) => allowed.has(sliceId))
+  };
+}
+
+function buildSubcontextSystemMessage(subcontext: RlmSubcontext): string {
+  const preview = subcontext.sliceIds.slice(0, 12).join(", ");
+  const suffix =
+    subcontext.sliceIds.length > 12
+      ? ` (+${subcontext.sliceIds.length - 12} more)`
+      : "";
+
+  return (
+    `Active subcontext is restricted to ${subcontext.sliceIds.length} slice(s). ` +
+    "Prefer search/load/neighbor inspection within this narrowed evidence set. " +
+    `Allowed slice IDs: ${preview}${suffix}`
+  );
+}
 
 export class RlmEngine {
   private readonly provider: RlmProvider;
@@ -75,17 +137,24 @@ export class RlmEngine {
       maxDepthReached: 0
     };
 
-    const output = await this.runInternal({
-      query: input.query,
-      systemPrompt: input.systemPrompt,
-      depth: 0
-    }, context);
+    const output = await this.runInternal(
+      {
+        query: input.query,
+        systemPrompt: input.systemPrompt,
+        depth: 0,
+        subcontext: input.subcontext
+      },
+      context
+    );
 
     this.lastTrace = context.trace;
     return output;
   }
 
-  private async runInternal(input: RunInternalInput, context: RunContext): Promise<RlmEngineOutput> {
+  private async runInternal(
+    input: RunInternalInput,
+    context: RunContext
+  ): Promise<RlmEngineOutput> {
     context.maxDepthReached = Math.max(context.maxDepthReached, input.depth);
     this.assertWithinLimits(input.depth, context);
 
@@ -94,6 +163,12 @@ export class RlmEngine {
       messages.push({
         role: "system",
         content: input.systemPrompt
+      });
+    }
+    if (input.subcontext) {
+      messages.push({
+        role: "system",
+        content: buildSubcontextSystemMessage(input.subcontext)
       });
     }
     messages.push({
@@ -109,14 +184,16 @@ export class RlmEngine {
         depth: input.depth,
         iteration,
         messages,
-        traceId: context.trace.traceId
+        traceId: context.trace.traceId,
+        subcontext: input.subcontext
       });
       context.totalIterations += 1;
 
       context.trace.steps.push({
         depth: input.depth,
         iteration,
-        providerAction: action
+        providerAction: action,
+        subcontext: input.subcontext
       });
 
       if (action.type === "final") {
@@ -133,7 +210,13 @@ export class RlmEngine {
         };
       }
 
-      const toolResult = await this.dispatchToolCall(action.call, input.depth, iteration, context);
+      const toolResult = await this.dispatchToolCall(
+        action.call,
+        input.depth,
+        iteration,
+        input.subcontext,
+        context
+      );
       context.trace.steps[context.trace.steps.length - 1]!.toolResult = toolResult;
 
       messages.push({
@@ -159,6 +242,7 @@ export class RlmEngine {
     call: RlmToolCall,
     depth: number,
     iteration: number,
+    subcontext: RlmSubcontext | undefined,
     context: RunContext
   ): Promise<RlmToolResult> {
     if (call.name === "recursive_query") {
@@ -176,28 +260,48 @@ export class RlmEngine {
         };
       }
 
-      const sub = await this.runInternal({
-        query,
-        systemPrompt:
-          typeof call.args.systemPrompt === "string" ? call.args.systemPrompt : undefined,
-        depth: depth + 1
-      }, context);
+      const childSubcontext = mergeSubcontexts(
+        subcontext,
+        normalizeSubcontext(call.args.subcontext)
+      );
+
+      const sub = await this.runInternal(
+        {
+          query,
+          systemPrompt:
+            typeof call.args.systemPrompt === "string" ? call.args.systemPrompt : undefined,
+          depth: depth + 1,
+          subcontext: childSubcontext
+        },
+        context
+      );
       return {
         ok: true,
         data: {
           answer: sub.answer,
           citations: sub.citations,
-          traceId: sub.traceId
+          traceId: sub.traceId,
+          subcontext: childSubcontext
         }
       };
     }
 
-    const result = await this.tools.invoke(call, {
-      depth,
-      iteration,
-      traceId: context.trace.traceId,
-      loadedBytes: context.loadedBytes
-    });
+    const result = await this.tools.invoke(
+      {
+        ...call,
+        args: {
+          ...call.args,
+          ...(subcontext ? { subcontext } : {})
+        }
+      },
+      {
+        depth,
+        iteration,
+        traceId: context.trace.traceId,
+        loadedBytes: context.loadedBytes,
+        subcontext
+      }
+    );
     context.loadedBytes += Math.max(0, Number(result.loadedBytes ?? 0));
     this.assertWithinLimits(depth, context);
     return result;

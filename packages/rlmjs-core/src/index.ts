@@ -18,6 +18,7 @@ export type {
   RlmSliceSearchHit,
   RlmSliceSummaryArgs,
   RlmStorageAdapter,
+  RlmSubcontext,
   RlmToolCall,
   RlmToolResult,
   RlmToolRuntime,

@@ -11,5 +11,6 @@ Provided:
 - `RlmEngine` with:
   - iterative loop,
   - recursive sub-query support via `recursive_query` tool call,
+  - optional restricted sub-context propagation for child runs,
   - hard budget checks (`maxDepth`, `maxIterations`, `maxTimeMs`, `maxLoadedBytes`),
   - trace capture.

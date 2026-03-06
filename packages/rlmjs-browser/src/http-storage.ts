@@ -1,5 +1,6 @@
 import type {
   RlmSlice,
+  RlmSliceLoadArgs,
   RlmSliceNeighborArgs,
   RlmSliceSearchArgs,
   RlmSliceSearchHit,
@@ -51,7 +52,7 @@ export class HttpStorageAdapter implements RlmStorageAdapter {
     return await this.post<RlmSliceSearchHit[]>(this.endpoints.searchSlices, args);
   }
 
-  async loadSlice(args: { sliceId: string; start?: number; end?: number }): Promise<RlmSlice> {
+  async loadSlice(args: RlmSliceLoadArgs): Promise<RlmSlice> {
     return await this.post<RlmSlice>(this.endpoints.loadSlice, args);
   }
 

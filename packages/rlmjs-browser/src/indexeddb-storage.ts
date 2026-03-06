@@ -1,9 +1,11 @@
 import type {
   JsonLike,
   RlmSlice,
+  RlmSliceLoadArgs,
   RlmSliceNeighborArgs,
   RlmSliceSearchArgs,
   RlmSliceSearchHit,
+  RlmSubcontext,
   RlmSliceSummaryArgs,
   RlmStorageAdapter
 } from "@software-machines/rlmjs-core";
@@ -80,6 +82,13 @@ function lexicalScore(queryTokens: string[], text: string): number {
   return score;
 }
 
+function isAllowedSlice(sliceId: string, subcontext: RlmSubcontext | undefined): boolean {
+  if (!subcontext) {
+    return true;
+  }
+  return subcontext.sliceIds.includes(sliceId);
+}
+
 export class IndexedDbStorageAdapter implements RlmStorageAdapter {
   private readonly dbName: string;
   private readonly storeName: string;
@@ -121,6 +130,7 @@ export class IndexedDbStorageAdapter implements RlmStorageAdapter {
     const records = await this.getAll(db);
 
     const matches = records
+      .filter((rec) => isAllowedSlice(rec.sliceId, args.subcontext))
       .filter((rec) => matchesFilters(rec.metadata, args.filters))
       .map((rec) => {
         const source = `${rec.summary ?? ""}\n${rec.text}`;
@@ -148,9 +158,12 @@ export class IndexedDbStorageAdapter implements RlmStorageAdapter {
     return matches;
   }
 
-  async loadSlice(args: { sliceId: string; start?: number; end?: number }): Promise<RlmSlice> {
+  async loadSlice(args: RlmSliceLoadArgs): Promise<RlmSlice> {
     const db = await this.open();
     const key = ensureSliceId(args.sliceId);
+    if (!isAllowedSlice(key, args.subcontext)) {
+      throw new Error(`slice not allowed in current subcontext: ${key}`);
+    }
     const rec = await new Promise<IndexedDbSliceRecord | undefined>((resolve, reject) => {
       const tx = db.transaction(this.storeName, "readonly");
       const req = tx.objectStore(this.storeName).get(key);
@@ -175,7 +188,9 @@ export class IndexedDbStorageAdapter implements RlmStorageAdapter {
     const db = await this.open();
     const key = ensureSliceId(args.sliceId);
     const radius = Math.max(1, Math.floor(args.radius ?? 1));
-    const records = await this.getAll(db);
+    const records = (await this.getAll(db)).filter((rec) =>
+      isAllowedSlice(rec.sliceId, args.subcontext)
+    );
     const target = records.find((rec) => rec.sliceId === key);
     if (!target) {
       throw new Error(`slice not found: ${key}`);
@@ -195,7 +210,10 @@ export class IndexedDbStorageAdapter implements RlmStorageAdapter {
   }
 
   async getSliceSummary(args: RlmSliceSummaryArgs): Promise<{ sliceId: string; summary: string }> {
-    const slice = await this.loadSlice({ sliceId: args.sliceId });
+    const slice = await this.loadSlice({
+      sliceId: args.sliceId,
+      subcontext: args.subcontext
+    });
     return {
       sliceId: slice.sliceId,
       summary: truncateText(slice.text)

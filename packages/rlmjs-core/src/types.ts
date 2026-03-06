@@ -18,6 +18,11 @@ export type RlmToolCall = {
   args: Record<string, unknown>;
 };
 
+export type RlmSubcontext = {
+  mode: "restricted";
+  sliceIds: string[];
+};
+
 export type RlmToolResult = {
   ok: boolean;
   data?: unknown;
@@ -51,6 +56,7 @@ export type RlmProviderInput = {
   iteration: number;
   messages: RlmMessage[];
   traceId: string;
+  subcontext?: RlmSubcontext;
 };
 
 export interface RlmProvider {
@@ -62,6 +68,7 @@ export type RlmToolRuntimeState = {
   iteration: number;
   traceId: string;
   loadedBytes: number;
+  subcontext?: RlmSubcontext;
 };
 
 export interface RlmToolRuntime {
@@ -72,21 +79,25 @@ export type RlmSliceSearchArgs = {
   query: string;
   k?: number;
   filters?: Record<string, JsonLike>;
+  subcontext?: RlmSubcontext;
 };
 
 export type RlmSliceLoadArgs = {
   sliceId: string;
   start?: number;
   end?: number;
+  subcontext?: RlmSubcontext;
 };
 
 export type RlmSliceNeighborArgs = {
   sliceId: string;
   radius?: number;
+  subcontext?: RlmSubcontext;
 };
 
 export type RlmSliceSummaryArgs = {
   sliceId: string;
+  subcontext?: RlmSubcontext;
 };
 
 export type RlmSlice = {
@@ -112,6 +123,7 @@ export interface RlmStorageAdapter {
 export type RlmEngineInput = {
   query: string;
   systemPrompt?: string;
+  subcontext?: RlmSubcontext;
 };
 
 export type RlmEngineOutput = {
@@ -131,6 +143,7 @@ export type RlmTraceStep = {
   iteration: number;
   providerAction: RlmProviderAction;
   toolResult?: RlmToolResult;
+  subcontext?: RlmSubcontext;
 };
 
 export type RlmTrace = {

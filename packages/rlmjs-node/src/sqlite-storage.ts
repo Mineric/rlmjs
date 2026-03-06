@@ -3,9 +3,11 @@ import Database from "better-sqlite3";
 import type {
   JsonLike,
   RlmSlice,
+  RlmSliceLoadArgs,
   RlmSliceNeighborArgs,
   RlmSliceSearchArgs,
   RlmSliceSearchHit,
+  RlmSubcontext,
   RlmSliceSummaryArgs,
   RlmStorageAdapter
 } from "@software-machines/rlmjs-core";
@@ -94,6 +96,13 @@ function lexicalScore(tokens: string[], text: string): number {
   return score;
 }
 
+function isAllowedSlice(sliceId: string, subcontext: RlmSubcontext | undefined): boolean {
+  if (!subcontext) {
+    return true;
+  }
+  return subcontext.sliceIds.includes(sliceId);
+}
+
 export class SqliteStorageAdapter implements RlmStorageAdapter {
   private readonly db: Database.Database;
   private readonly tableName: string;
@@ -157,6 +166,9 @@ export class SqliteStorageAdapter implements RlmStorageAdapter {
 
     const scored = rows
       .map((row) => {
+        if (!isAllowedSlice(row.slice_id, args.subcontext)) {
+          return null;
+        }
         const metadata = parseMetadata(row.metadata_json);
         if (!matchesFilters(metadata, args.filters)) {
           return null;
@@ -187,8 +199,11 @@ export class SqliteStorageAdapter implements RlmStorageAdapter {
     return scored;
   }
 
-  async loadSlice(args: { sliceId: string; start?: number; end?: number }): Promise<RlmSlice> {
+  async loadSlice(args: RlmSliceLoadArgs): Promise<RlmSlice> {
     const sliceId = ensureSliceId(args.sliceId);
+    if (!isAllowedSlice(sliceId, args.subcontext)) {
+      throw new Error(`slice not allowed in current subcontext: ${sliceId}`);
+    }
     const row = this.db
       .prepare(
         `SELECT slice_id, text, sequence, timestamp_ms, summary, metadata_json
@@ -215,24 +230,23 @@ export class SqliteStorageAdapter implements RlmStorageAdapter {
     const sliceId = ensureSliceId(args.sliceId);
     const radius = Math.max(1, Math.floor(args.radius ?? 1));
 
-    const target = this.db
-      .prepare(`SELECT sequence FROM ${this.tableName} WHERE slice_id = ?`)
-      .get(sliceId) as { sequence: number } | undefined;
-
-    if (!target) {
-      throw new Error(`slice not found: ${sliceId}`);
-    }
-
     const rows = this.db
       .prepare(
         `SELECT slice_id, text, sequence, timestamp_ms, summary, metadata_json
          FROM ${this.tableName}
-         WHERE sequence BETWEEN ? AND ?
          ORDER BY sequence ASC`
       )
-      .all(target.sequence - radius, target.sequence + radius) as SliceRow[];
+      .all() as SliceRow[];
+    const allowedRows = rows.filter((row) => isAllowedSlice(row.slice_id, args.subcontext));
+    const targetIndex = allowedRows.findIndex((row) => row.slice_id === sliceId);
 
-    return rows.map<RlmSlice>((row) => ({
+    if (targetIndex < 0) {
+      throw new Error(`slice not found: ${sliceId}`);
+    }
+
+    const start = Math.max(0, targetIndex - radius);
+    const end = Math.min(allowedRows.length - 1, targetIndex + radius);
+    return allowedRows.slice(start, end + 1).map<RlmSlice>((row) => ({
       sliceId: row.slice_id,
       text: row.text,
       metadata: parseMetadata(row.metadata_json)
@@ -240,9 +254,13 @@ export class SqliteStorageAdapter implements RlmStorageAdapter {
   }
 
   async getSliceSummary(args: RlmSliceSummaryArgs): Promise<{ sliceId: string; summary: string }> {
+    const sliceId = ensureSliceId(args.sliceId);
+    if (!isAllowedSlice(sliceId, args.subcontext)) {
+      throw new Error(`slice not allowed in current subcontext: ${sliceId}`);
+    }
     const row = this.db
       .prepare(`SELECT slice_id, summary, text FROM ${this.tableName} WHERE slice_id = ?`)
-      .get(ensureSliceId(args.sliceId)) as { slice_id: string; summary: string | null; text: string } | undefined;
+      .get(sliceId) as { slice_id: string; summary: string | null; text: string } | undefined;
 
     if (!row) {
       throw new Error(`slice not found: ${args.sliceId}`);

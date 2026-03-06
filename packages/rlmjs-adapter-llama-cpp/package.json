@@ -21,7 +21,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "npm run build && node --test \"dist/**/*.test.js\"",
+    "test": "npm run build && find dist -name '*.test.js' -type f -print0 | xargs -0 node --test",
     "clean": "rm -rf dist"
   }
 }
