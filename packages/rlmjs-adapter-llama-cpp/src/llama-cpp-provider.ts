@@ -12,8 +12,9 @@ export type LlamaCppProviderOptions = {
 const DEFAULT_BASE_URL = "http://127.0.0.1:8080/v1";
 const DEFAULT_ACTION_PROMPT = [
   "Return exactly one JSON object.",
-  '{"type":"tool_call","call":{"name":"searchSlices|loadSlice|loadNeighbors|getSliceSummary|recursive_query","args":{}}}',
-  '{"type":"final","answer":"...","citations":[{"id":"...","start":0,"end":0}]}'
+  '{"type":"tool_call","call":{"name":"searchSlices|loadSlice|loadNeighbors|getSliceSummary|composeSubcontext|recursive_query","args":{}}}',
+  '{"type":"final","answer":"...","citations":[{"id":"...","start":0,"end":0}]}',
+  "Use composeSubcontext to narrow child runs to selected slice IDs before recursive_query when possible."
 ].join("\n");
 
 function parseJson(input: string): unknown {

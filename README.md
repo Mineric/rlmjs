@@ -55,6 +55,28 @@ const out = await engine.run({ query: "Find launch date" });
 console.log(out.answer, out.citations, out.stats);
 ```
 
+## Recursive Subcontexts
+
+`recursive_query` can carry a restricted child subcontext:
+
+```ts
+{
+  type: "tool_call",
+  call: {
+    name: "recursive_query",
+    args: {
+      query: "Check only the shortlisted evidence",
+      subcontext: {
+        mode: "restricted",
+        sliceIds: ["slice-12", "slice-19", "slice-44"]
+      }
+    }
+  }
+}
+```
+
+Use `composeSubcontext` when the model wants to narrow a child run to selected slice IDs before recursing.
+
 ## Reliability Options (minimal)
 
 ```ts

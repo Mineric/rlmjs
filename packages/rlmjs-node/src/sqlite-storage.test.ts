@@ -66,3 +66,41 @@ test("sqlite adapter loads neighbors by sequence radius", async () => {
     adapter.close();
   }
 });
+
+test("sqlite adapter enforces restricted subcontexts", async () => {
+  const adapter = new SqliteStorageAdapter();
+  try {
+    adapter.putSlices([
+      { sliceId: "r1", sequence: 1, text: "Alice discussed launch plan" },
+      { sliceId: "r2", sequence: 2, text: "Fallback phrase is northglass" },
+      { sliceId: "r3", sequence: 3, text: "Current launch target remains April 12" }
+    ]);
+
+    const subcontext = {
+      mode: "restricted" as const,
+      sliceIds: ["r2", "r3"]
+    };
+
+    const hits = await adapter.searchSlices({
+      query: "launch plan",
+      subcontext
+    });
+    assert.deepEqual(
+      hits.map((item) => item.sliceId),
+      ["r3"]
+    );
+
+    await assert.rejects(
+      () => adapter.loadSlice({ sliceId: "r1", subcontext }),
+      /slice not allowed/
+    );
+
+    const neighbors = await adapter.loadNeighbors({ sliceId: "r2", radius: 1, subcontext });
+    assert.deepEqual(
+      neighbors.map((item) => item.sliceId),
+      ["r2", "r3"]
+    );
+  } finally {
+    adapter.close();
+  }
+});

@@ -114,7 +114,7 @@ async function runQuery() {
   return await engine.run({
     query,
     systemPrompt:
-      "Use tools to inspect context. Call searchSlices before loadSlice. Return final answer with citations when possible."
+      "Use tools to inspect context. Call searchSlices before loadSlice. Use composeSubcontext before recursive_query when you can narrow the evidence. Return final answer with citations when possible."
   });
 }
 

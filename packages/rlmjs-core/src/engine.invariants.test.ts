@@ -123,6 +123,84 @@ test("recursive_query dispatch reaches child depth and returns to root", async (
   );
 });
 
+test("recursive_query can narrow a child run to a restricted subcontext", async () => {
+  const toolCalls: RlmToolCall[] = [];
+
+  const provider: RlmProvider = {
+    async complete(input): Promise<RlmProviderAction> {
+      const toolSeen = hasToolMessage(input);
+
+      if (input.depth === 0 && !toolSeen) {
+        return {
+          type: "tool_call",
+          call: {
+            name: "recursive_query",
+            args: {
+              query: "inspect only selected evidence",
+              subcontext: {
+                mode: "restricted",
+                sliceIds: ["slice:2"]
+              }
+            }
+          }
+        };
+      }
+
+      if (input.depth === 1 && !toolSeen) {
+        assert.deepEqual(input.subcontext, {
+          mode: "restricted",
+          sliceIds: ["slice:2"]
+        });
+        return {
+          type: "tool_call",
+          call: {
+            name: "searchSlices",
+            args: { query: input.query }
+          }
+        };
+      }
+
+      if (input.depth === 1) {
+        return {
+          type: "final",
+          answer: "child answer"
+        };
+      }
+
+      return {
+        type: "final",
+        answer: "root answer"
+      };
+    }
+  };
+
+  const tools = new InlineTools(async (call) => {
+    toolCalls.push(call);
+    return {
+      ok: true,
+      data: { tool: call.name, subcontext: call.args.subcontext },
+      loadedBytes: 64
+    };
+  });
+
+  const engine = new RlmEngine({ provider, tools, limits: { maxDepth: 3 } });
+  const out = await engine.run({ query: "main question" });
+
+  assert.equal(out.answer, "root answer");
+  assert.deepEqual(toolCalls, [
+    {
+      name: "searchSlices",
+      args: {
+        query: "inspect only selected evidence",
+        subcontext: {
+          mode: "restricted",
+          sliceIds: ["slice:2"]
+        }
+      }
+    }
+  ]);
+});
+
 test("loaded-bytes limit is enforced", async () => {
   const provider: RlmProvider = {
     async complete(input): Promise<RlmProviderAction> {

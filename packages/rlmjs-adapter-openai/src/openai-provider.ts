@@ -21,8 +21,9 @@ const DEFAULT_ACTION_PROMPT = [
   "You are a recursive retrieval controller.",
   "Return exactly one JSON object.",
   "Valid formats:",
-  '{"type":"tool_call","call":{"name":"searchSlices|loadSlice|loadNeighbors|getSliceSummary|recursive_query","args":{}}}',
+  '{"type":"tool_call","call":{"name":"searchSlices|loadSlice|loadNeighbors|getSliceSummary|composeSubcontext|recursive_query","args":{}}}',
   '{"type":"final","answer":"...","citations":[{"id":"...","start":0,"end":0}]}',
+  "Use composeSubcontext to narrow child runs to selected slice IDs before recursive_query when the evidence can be reduced.",
   "Do not include markdown fences."
 ].join("\n");
 
