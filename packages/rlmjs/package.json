@@ -1,0 +1,27 @@
+{
+  "name": "@software-machines/rlmjs",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Browser-first RLM runtime for long-lived virtualized context.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build && find dist -name '*.test.js' -type f -print0 | xargs -0 node --test",
+    "clean": "rm -rf dist"
+  }
+}

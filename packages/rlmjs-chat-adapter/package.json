@@ -1,0 +1,24 @@
+{
+  "name": "@software-machines/rlmjs-chat-adapter",
+  "version": "0.0.1",
+  "private": true,
+  "description": "OpenAI-compatible chat model adapter for rlmjs, including llama.cpp convenience wrappers.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build && find dist -name '*.test.js' -type f -print0 | xargs -0 node --test",
+    "clean": "rm -rf dist"
+  }
+}

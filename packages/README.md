@@ -2,20 +2,14 @@
 
 This directory contains the modular `rlmjs` implementation intended for future npm publishing.
 
+The runtime is browser-first and RLM-inspired, but it is not a paper-faithful reproduction of the original research stack or benchmarks.
+
 ## Packages
 
-- `@software-machines/rlmjs-core`
-  - Recursive execution engine, limits, trace model, storage-tool runtime bridge.
-- `@software-machines/rlmjs-tools`
-  - Tool registry helpers.
-- `@software-machines/rlmjs-browser`
-  - Browser adapters: IndexedDB storage, worker runtime bridge, optional HTTP storage bridge.
-- `@software-machines/rlmjs-node`
-  - Node reference storage adapter over SQLite.
-- `@software-machines/rlmjs-adapter-openai`
-  - OpenAI-compatible provider adapter.
-- `@software-machines/rlmjs-adapter-llama-cpp`
-  - llama.cpp OpenAI-format provider adapter.
+- `@software-machines/rlmjs`
+  - Browser-first runtime: virtualized context, notebook controller/runtime, IndexedDB-backed corpus/state stores, a thin `createRlm(...)` facade, and helpers like `buildReplCallGraph(...)` / `buildReplRunHistory(...)`.
+- `@software-machines/rlmjs-chat-adapter`
+  - OpenAI-compatible chat model adapter, with llama.cpp convenience wrappers.
 
 ## Validation
 

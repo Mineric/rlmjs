@@ -1,15 +1,19 @@
 # rlmjs
 
-Reusable JS/TS Recursive Language Model (RLM) runtime packages.
+Reusable JS/TS RLM-inspired runtime toolkit.
+
+The repo now centers a single browser-first path:
+
+- `@software-machines/rlmjs` for notebook-style execution over virtualized context with `FINAL(...)` / `FINAL_VAR(...)`.
+- One OpenAI-compatible chat-model adapter package, including llama.cpp convenience wrappers.
+
+This is a host-integrated runtime toolkit.
+`ContextHandle` intentionally gives the model a narrower browser-safe abstraction over stored context, not the paper's full raw "any variable can become child context" execution model.
 
 ## Packages
 
-- `@software-machines/rlmjs-core`
-- `@software-machines/rlmjs-tools`
-- `@software-machines/rlmjs-browser`
-- `@software-machines/rlmjs-node`
-- `@software-machines/rlmjs-adapter-openai`
-- `@software-machines/rlmjs-adapter-llama-cpp`
+- `@software-machines/rlmjs`
+- `@software-machines/rlmjs-chat-adapter`
 
 ## Local Dev (this repo)
 
@@ -21,111 +25,100 @@ npm run validate
 ## Install (future, after publish)
 
 ```bash
-npm install @software-machines/rlmjs-core @software-machines/rlmjs-tools
-npm install @software-machines/rlmjs-browser @software-machines/rlmjs-adapter-openai
+npm install @software-machines/rlmjs @software-machines/rlmjs-chat-adapter
 ```
 
-## Minimal Usage (core + tools)
+Default path: use `createRlm(...)` for the common setup. `ReplRuntime`, `ReplController`, and `createReplModelStack(...)` remain available for lower-level control.
+
+## Browser REPL Usage (minimal)
 
 ```ts
-import { RlmEngine } from "@software-machines/rlmjs-core";
-import { createToolRegistry, okToolResult } from "@software-machines/rlmjs-tools";
+import {
+  createRlm,
+  MemoryCorpusStore,
+  createIndexedDbReplStateStore
+} from "@software-machines/rlmjs";
+import { OpenAiCompatibleChatModel } from "@software-machines/rlmjs-chat-adapter";
 
-const provider = {
-  async complete(input) {
-    const sawTool = input.messages.some((m) => m.role === "tool");
-    if (!sawTool) {
-      return {
-        type: "tool_call",
-        call: { name: "searchSlices", args: { query: input.query } }
-      };
-    }
-    return { type: "final", answer: "Done." };
-  }
-};
-
-const tools = createToolRegistry({
-  async searchSlices(args) {
-    return okToolResult([{ sliceId: "s1", score: 1, summary: `hit for ${String(args.query ?? "")}` }], 128);
-  }
-});
-
-const engine = new RlmEngine({ provider, tools });
-const out = await engine.run({ query: "Find launch date" });
-console.log(out.answer, out.citations, out.stats);
-```
-
-## Recursive Subcontexts
-
-`recursive_query` can carry a restricted child subcontext:
-
-```ts
-{
-  type: "tool_call",
-  call: {
-    name: "recursive_query",
-    args: {
-      query: "Check only the shortlisted evidence",
-      subcontext: {
-        mode: "restricted",
-        sliceIds: ["slice-12", "slice-19", "slice-44"]
-      }
-    }
-  }
-}
-```
-
-Use `composeSubcontext` when the model wants to narrow a child run to selected slice IDs before recursing.
-
-## Reliability Options (minimal)
-
-```ts
-const engine = new RlmEngine({
-  provider,
-  tools,
-  policy: {
-    requireToolCallBeforeFinal: true,
-    maxPrematureFinals: 2
-  }
-});
-```
-
-```ts
-const llamaProvider = new LlamaCppProvider({
-  baseUrl: "http://127.0.0.1:8080/v1",
-  model: "your-model",
-  maxRetries: 3,
-  retryDelayMs: 250
-});
-```
-
-## Browser Static Usage (IndexedDB + OpenAI-compatible provider)
-
-```ts
-import { RlmEngine, createStorageToolRuntime } from "@software-machines/rlmjs-core";
-import { createIndexedDbStorageAdapter } from "@software-machines/rlmjs-browser";
-import { OpenAiCompatibleProvider } from "@software-machines/rlmjs-adapter-openai";
-
-const storage = createIndexedDbStorageAdapter({ dbName: "rlmjs-demo", storeName: "chat_slices" });
-await storage.putSlices([
-  { sliceId: "slice-1", sequence: 1, text: "Alice: Launch is April 12." }
+const store = new MemoryCorpusStore();
+store.putChunks([
+  { chunkId: "m1", sequence: 1, text: "Alice: Launch is April 12." }
 ]);
 
-const provider = new OpenAiCompatibleProvider({
+const chatModel = new OpenAiCompatibleChatModel({
+  baseUrl: "http://127.0.0.1:8080/v1",
+  model: "your-model",
+  temperature: 0
+});
+const runtimeStateStore = createIndexedDbReplStateStore({
+  dbName: "rlmjs-runtime-state"
+});
+
+const session = createRlm({
+  context: store,
+  model: chatModel,
+  sessionId: "launch-session",
+  stateStore: runtimeStateStore,
+  maxDepth: 2
+});
+
+const out = await session.run("When is launch?");
+console.log(out.answer, out.graph, out.history);
+```
+
+Note: `ReplRuntime` is an inline restricted JavaScript runtime for browser-side experimentation. It is not a hard isolation boundary, and its execution timeout is cooperative.
+
+`ReplRuntime` defaults to `maxDepth: 1`, where `callRlm(...)` falls back to a plain leaf-model completion handler instead of another notebook child. The built-in leaf helper now materializes up to about 512 KB of child context by default; set `maxDepth: 2` or higher if you want nested REPL-driven child calls.
+
+`ReplController` prefers in-code `FINAL(...)` / `FINAL_VAR(...)` calls, but also accepts plain assistant-side final tags for compatibility. `callRlm(...)` can recurse over narrowed context views or ephemeral derived text via `{ text: "..." }`. Consecutive identical code blocks now fail early instead of burning the full iteration budget.
+
+The controller also surfaces current depth and context size to the model on each turn.
+
+`createRlm(...)` is the simplest path for common usage. It wraps `ReplRuntime`, `ReplController`, and `createReplModelStack(...)` into one session object while preserving access to the lower-level pieces when needed.
+
+`session.run(...)` returns both `graph` and `history`. `buildReplCallGraph(...)` and `buildReplRunHistory(...)` remain available when you need to reconstruct those views from lower-level controller results.
+
+`ContextHandle` child views keep chunk selection isolated at the handle API level and `materialize(...)` can partially slice oversized chunks instead of returning empty output when the first chunk exceeds the byte budget.
+
+The built-in `MemoryCorpusStore` and `IndexedDbCorpusStore` use simple lexical search as the baseline. `SemanticCorpusStore` is an embedding-backed wrapper over any `CorpusStore`, so you can add semantic retrieval without changing the runtime/controller APIs.
+
+`IndexedDbReplStateStore` is available when you want notebook `state` to persist across reloads. Persisted runtime state must stay JSON-like; large strings are automatically spilled into a separate blob store.
+
+## Browser Static Usage (IndexedDB + OpenAI-compatible chat model)
+
+```ts
+import {
+  createRlm,
+  createIndexedDbCorpusStore,
+  createIndexedDbReplStateStore
+} from "@software-machines/rlmjs";
+import { OpenAiCompatibleChatModel } from "@software-machines/rlmjs-chat-adapter";
+
+const storage = createIndexedDbCorpusStore({ dbName: "rlmjs-demo", storeName: "chat_chunks" });
+const runtimeStateStore = createIndexedDbReplStateStore({ dbName: "rlmjs-demo-state" });
+await storage.putChunks([
+  { chunkId: "chunk-1", sequence: 1, role: "message", text: "Alice: Launch is April 12." }
+]);
+
+const chatModel = new OpenAiCompatibleChatModel({
   baseUrl: "http://127.0.0.1:8080/v1",
   model: "your-model",
   temperature: 0
 });
 
-const engine = new RlmEngine({
-  provider,
-  tools: createStorageToolRuntime(storage)
+const session = createRlm({
+  context: storage,
+  model: chatModel,
+  sessionId: "launch-session",
+  stateStore: runtimeStateStore,
+  maxDepth: 2
 });
 
-const out = await engine.run({ query: "When is launch?" });
-console.log(out);
+const out = await session.run("When is launch?");
+console.log(out.answer, out.graph, out.history);
 ```
 
 ## Example
 
 - Browser static demo: `examples/browser-static-demo`
+- Browser REPL design notes: `docs/browser-repl-runtime-plan.md`

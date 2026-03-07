@@ -9,10 +9,11 @@
   <body>
     <main class="page">
       <h1>rlmjs Browser Static Demo</h1>
-      <p class="muted">Static-only demo with IndexedDB context + worker tool runtime.</p>
+      <p class="muted">Static-only demo with IndexedDB context + browser REPL controller.</p>
 
       <section class="panel">
         <h2>Provider</h2>
+        <p id="runtimeStatus" class="muted">Runtime worker booting...</p>
         <label>
           Base URL
           <input id="baseUrl" type="text" value="http://127.0.0.1:8080/v1" />
