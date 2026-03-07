@@ -5,17 +5,9 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dir="$(cd "${script_dir}/.." && pwd)"
 
 pkgs=(
-  "rlmjs-core"
-  "rlmjs-tools"
-  "rlmjs-node"
-  "rlmjs-browser"
-  "rlmjs-adapter-openai"
-  "rlmjs-adapter-llama-cpp"
+  "rlmjs"
+  "rlmjs-chat-adapter"
 )
-
-echo "==> prebuild: rlmjs-core"
-npm --prefix "${root_dir}/rlmjs-core" run build
-echo
 
 for pkg in "${pkgs[@]}"; do
   echo "==> ${pkg}: typecheck"
