@@ -2,14 +2,6 @@
 
 Reusable JS/TS RLM-inspired runtime toolkit.
 
-The repo now centers a single browser-first path:
-
-- `@software-machines/rlmjs` for notebook-style execution over virtualized context with `FINAL(...)` / `FINAL_VAR(...)`.
-- One OpenAI-compatible chat-model adapter package, including llama.cpp convenience wrappers.
-
-This is a host-integrated runtime toolkit.
-`ContextHandle` intentionally gives the model a narrower browser-safe abstraction over stored context, not the paper's full raw "any variable can become child context" execution model.
-
 ## Packages
 
 - `@software-machines/rlmjs`
