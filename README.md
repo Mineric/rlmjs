@@ -1,6 +1,6 @@
 # rlmjs
 
-Reusable JS/TS RLM-inspired runtime toolkit.
+Recursive Language Model (RLM) inspired runtime toolkit in JS/TS.
 
 ## Packages
 
