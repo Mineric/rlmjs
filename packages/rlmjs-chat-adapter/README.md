@@ -1,4 +1,4 @@
-# @software-machines/rlmjs-chat-adapter
+# @mineric/rlmjs-chat-adapter
 
 OpenAI-compatible chat model adapter for `rlmjs`.
 

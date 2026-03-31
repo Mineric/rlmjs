@@ -1,5 +1,5 @@
 {
-  "name": "@software-machines/rlmjs-chat-adapter",
+  "name": "@mineric/rlmjs-chat-adapter",
   "version": "0.0.1",
   "private": true,
   "description": "OpenAI-compatible chat model adapter for rlmjs, including llama.cpp convenience wrappers.",

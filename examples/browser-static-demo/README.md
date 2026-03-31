@@ -1,8 +1,8 @@
 # rlmjs Browser Static Demo
 
 Static demo that uses:
-- `@software-machines/rlmjs`
-- `@software-machines/rlmjs-chat-adapter`
+- `@mineric/rlmjs`
+- `@mineric/rlmjs-chat-adapter`
 
 It stores context in IndexedDB and boots a dedicated runtime Worker on page load.
 

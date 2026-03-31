@@ -1,5 +1,5 @@
 {
-  "name": "@software-machines/rlmjs-monorepo",
+  "name": "@mineric/rlmjs-monorepo",
   "private": true,
   "version": "0.0.1",
   "workspaces": [
