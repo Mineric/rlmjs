@@ -6,9 +6,9 @@ The runtime is browser-first and RLM-inspired, but it is not a paper-faithful re
 
 ## Packages
 
-- `@software-machines/rlmjs`
+- `@mineric/rlmjs`
   - Browser-first runtime: virtualized context, notebook controller/runtime, IndexedDB-backed corpus/state stores, a thin `createRlm(...)` facade, and helpers like `buildReplCallGraph(...)` / `buildReplRunHistory(...)`.
-- `@software-machines/rlmjs-chat-adapter`
+- `@mineric/rlmjs-chat-adapter`
   - OpenAI-compatible chat model adapter, with llama.cpp convenience wrappers.
 
 ## Validation

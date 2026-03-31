@@ -1,5 +1,5 @@
 {
-  "name": "@software-machines/rlmjs",
+  "name": "@mineric/rlmjs",
   "version": "0.0.1",
   "private": true,
   "description": "Browser-first RLM runtime for long-lived virtualized context.",

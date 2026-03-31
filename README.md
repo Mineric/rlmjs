@@ -4,8 +4,8 @@ Reusable JS/TS RLM-inspired runtime toolkit.
 
 ## Packages
 
-- `@software-machines/rlmjs`
-- `@software-machines/rlmjs-chat-adapter`
+- `@mineric/rlmjs`
+- `@mineric/rlmjs-chat-adapter`
 
 ## Local Dev (this repo)
 
@@ -17,7 +17,7 @@ npm run validate
 ## Install (future, after publish)
 
 ```bash
-npm install @software-machines/rlmjs @software-machines/rlmjs-chat-adapter
+npm install @mineric/rlmjs @mineric/rlmjs-chat-adapter
 ```
 
 Default path: use `createRlm(...)` for the common setup. `ReplRuntime`, `ReplController`, and `createReplModelStack(...)` remain available for lower-level control.
@@ -29,8 +29,8 @@ import {
   createRlm,
   MemoryCorpusStore,
   createIndexedDbReplStateStore
-} from "@software-machines/rlmjs";
-import { OpenAiCompatibleChatModel } from "@software-machines/rlmjs-chat-adapter";
+} from "@mineric/rlmjs";
+import { OpenAiCompatibleChatModel } from "@mineric/rlmjs-chat-adapter";
 
 const store = new MemoryCorpusStore();
 store.putChunks([
@@ -83,8 +83,8 @@ import {
   createRlm,
   createIndexedDbCorpusStore,
   createIndexedDbReplStateStore
-} from "@software-machines/rlmjs";
-import { OpenAiCompatibleChatModel } from "@software-machines/rlmjs-chat-adapter";
+} from "@mineric/rlmjs";
+import { OpenAiCompatibleChatModel } from "@mineric/rlmjs-chat-adapter";
 
 const storage = createIndexedDbCorpusStore({ dbName: "rlmjs-demo", storeName: "chat_chunks" });
 const runtimeStateStore = createIndexedDbReplStateStore({ dbName: "rlmjs-demo-state" });

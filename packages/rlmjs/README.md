@@ -1,4 +1,4 @@
-# @software-machines/rlmjs
+# @mineric/rlmjs
 
 Main browser-first runtime package for `rlmjs`.
 
@@ -35,7 +35,7 @@ import {
   createRlm,
   MemoryCorpusStore,
   createIndexedDbReplStateStore
-} from "@software-machines/rlmjs";
+} from "@mineric/rlmjs";
 
 const store = new MemoryCorpusStore();
 store.putChunks([
